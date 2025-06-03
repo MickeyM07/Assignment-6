@@ -1,0 +1,23 @@
+.movie-box{
+    display: flex;
+    gap: 10px;
+    position: relative;
+    bottom:50px;
+}
+.movie-posters{
+    display: flex;
+    gap: 100px;
+    justify-content: center;
+    align-items: center;
+    position:relative;
+    right:50px;
+}
+.movie-poster{
+    width: 200px;
+    border-radius: 10px;
+}
+
+.movie-poster:hover {
+    transform: scale(1.05);
+    box-shadow: 0px 4px 10px rgba(255, 75, 43, 0.3);
+}
