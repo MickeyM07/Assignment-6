@@ -47,7 +47,7 @@ function RegisterView() {
       return newGenres;
     });
   };
-
+  
   function signup(event) {
     event.preventDefault();
 
@@ -60,7 +60,6 @@ function RegisterView() {
       alert("Please select at least 5 genres.");
       return;
     }
-
     setFirst(fname);
     setLast(lname);
     setContextEmail(email);

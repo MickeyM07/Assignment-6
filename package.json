@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
     "axios": "^1.9.0",
     "dom": "^0.0.3",
+    "firebase": "^11.9.1",
     "immutable": "^5.1.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

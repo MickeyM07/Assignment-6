@@ -20,7 +20,7 @@ function GenreLogin() {
             addToCart(movie);
         }
     };
-//API KEY
+
     useEffect(() => {
         const fetchMovies = async () => {
             const url = selectedGenreId
