@@ -4,9 +4,13 @@ import NavBar from './components/NavBar.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useStoreContext } from '../context';
+import { doc, setDoc } from "firebase/firestore";
+import { firestore } from "../firebase/index.js";
+import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { auth } from "../firebase/index.js";
 
 function RegisterView() {
-  const { setEmail: setContextEmail, setFirst, setLast, setPassword: setContextPassword, setGenres } = useStoreContext();
+  const { setEmail: setContextEmail, setFirst, setLast, setPassword: setContextPassword, setGenres, setUser } = useStoreContext();
   const [email, setEmail] = useState('');
   const [fname, setFname] = useState('');
   const [lname, setLname] = useState('');
@@ -47,10 +51,9 @@ function RegisterView() {
       return newGenres;
     });
   };
-  
-  function signup(event) {
-    event.preventDefault();
 
+  const registerByEmail = async (event) => {
+    event.preventDefault();
     if (password !== verifpass) {
       alert("Passwords do not match!");
       return;
@@ -60,16 +63,71 @@ function RegisterView() {
       alert("Please select at least 5 genres.");
       return;
     }
-    setFirst(fname);
-    setLast(lname);
-    setContextEmail(email);
-    setContextPassword(password);
-    setGenres(selectedGenres);
-    navigate('/movies/genre');
-  }
+
+    try {
+      // Create user with email and password
+      const user = (await createUserWithEmailAndPassword(auth, email, password)).user;
+      
+      // Update user profile with first and last name
+      await updateProfile(user, { displayName: `${fname} ${lname}` });
+      setUser(user);  // Set the user in context
+      navigate('/movies/genre');  // Navigate to the next page
+
+      // Store user genres and name in Firestore
+      const selectgenrejs = Object.fromEntries(selectedGenres);
+      const docRef = doc(firestore, "users", user.uid);
+      await setDoc(docRef, {
+        user: user.uid,
+        firstName: fname,
+        lastName: lname,
+        genres: selectgenrejs
+      });
+
+      console.log(user);
+    } catch (error) {
+      console.log(error);
+      alert("Error creating user: " + error.message);
+    }
+  };
+
+  const registerByGoogle = async () => {
+    if (selectedGenres.size < 5) {
+      alert("Please select at least 5 genres.");
+      return;
+    }
+
+    try {
+      // Register user via Google Auth
+      const userCredential = await signInWithPopup(auth, new GoogleAuthProvider());
+      const user = userCredential.user;
+
+      // Set the user in context
+      setUser(user); 
+      setGenres(selectedGenres);  // Set genres in context
+
+      // Get first and last name from the user object or use empty strings if unavailable
+      const firstName = fname || (user.displayName && user.displayName.split(" ")[0]) || '';
+      const lastName = lname || (user.displayName && user.displayName.split(" ")[1]) || '';
+
+      // Store genres and names in Firestore
+      const selectgenrejs = Object.fromEntries(selectedGenres);
+      const docRef = doc(firestore, "users", user.uid);
+      await setDoc(docRef, { 
+        firstName: firstName, 
+        lastName: lastName, 
+        genres: selectgenrejs 
+      });
+
+      navigate('/movies/genre');  // Navigate to the next page
+    } catch (error) {
+      alert("Error creating user with Google!");
+      console.log(error);
+    }
+  };
+
 
   return (
-    <form onSubmit={signup}>
+    <form onSubmit={registerByEmail}>
       <div className="register-header">
         <NavBar />
       </div>
@@ -139,6 +197,7 @@ function RegisterView() {
             onChange={(e) => setVerifpass(e.target.value)}
             required />
           <button type="submit" className="register-button">register</button>
+          <button onClick={registerByGoogle} className={"registergbutton"}>Register by Google</button>
         </div>
       </div>
       <div className="register-footer">

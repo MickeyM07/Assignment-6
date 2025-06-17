@@ -77,7 +77,8 @@
     box-shadow: 0px 8px 20px rgba(255, 75, 43, 0.3);
 }
 
-.register-button {
+.register-button,
+.registergbutton {
     position: relative;
     background: linear-gradient(135deg, #ff416c, #ff4b2b);
     font-size: 20px;
@@ -85,7 +86,11 @@
     width: 15%;
 }
 
-.register-button:hover {
+.registergbutton{
+    width:30%;
+}
+.register-button:hover,
+.registergbutton:hover {
     position: relative;
     background: linear-gradient(135deg, #ff1f53, #ff2d08);
 }

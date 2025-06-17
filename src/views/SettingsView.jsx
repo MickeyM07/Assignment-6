@@ -34,7 +34,31 @@ function SettingsView() {
             initGenres.set(key, value);
         });
         setSelectedGenres(initGenres);
-    }, [genres]);
+        const fetchUserData = async () => {
+            if (user) {
+                try {
+                    const docRef = doc(firestore, "users", user.uid);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (data.genres) {
+                            const userGenres = new Map(Object.entries(data.genres));
+                            setSelectedGenres(userGenres); 
+                        }
+                        if (data.cart) {
+                            setCart(data.cart);
+                        } 
+                        if (data.firstName) setNewFname(data.firstName);
+                        if (data.lastName) setNewLname(data.lastName);
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                }
+            }
+        };
+        fetchUserData();
+    }, [genres, user]);
+
 
     const handleGenreChange = (event) => {
         const genreId = event.target.value;
@@ -51,12 +75,65 @@ function SettingsView() {
         setSelectedGenres(updatedSelectedGenres);
     };
 
-    const handleSaveChanges = () => {
-        setFirst(newFname);
-        setLast(newLname);
-        setGenres(selectedGenres);
-        alert("Settings updated successfully!");
-        navigate('/movies/genre');
+        const handlePasswordChange = async () => {
+        const auth = getAuth();
+        const userCred = auth.currentUser;
+
+        if (newPassword !== confirmPassword) {
+            setPasswordError('Passwords do not match!');
+            return;
+        }
+
+        if (!currentPassword) {
+            setPasswordError('Please enter your current password.');
+            return;
+        }
+
+        const credential = EmailAuthProvider.credential(userCred.email, currentPassword); // Use current password for re-authentication
+
+        try {
+            await reauthenticateWithCredential(userCred, credential);
+            await updatePassword(userCred, newPassword);
+            alert("Password updated successfully!");
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (error) {
+            console.error("Error updating password:", error);
+            setPasswordError("Error updating password. Please check your current password.");
+        }
+    };
+
+    const handleSaveChanges = async () => {
+        // Check if at least 10 genres are selected
+        if (selectedGenres.size < 10) {
+            setGenreError("You must select at least 10 genres.");
+            return;
+        } else {
+            setGenreError(""); // Clear error if condition is met
+        }
+
+        const updatedGenres = Object.fromEntries(selectedGenres);
+        if (user.providerData[0].providerId === "google.com") {
+            setNewFname(fname); 
+            setNewLname(lname); 
+        } else {
+            setFirst(newFname);
+            setLast(newLname);
+        }
+
+        try {
+            const userRef = doc(firestore, "users", user.uid);
+            await updateDoc(userRef, {
+                genres: updatedGenres, // Save selected genres to Firestore
+                firstName: newFname,
+                lastName: newLname,
+            }, { merge: true });
+            alert("Settings updated successfully!");
+            navigate('/movies/genre');
+        } catch (error) {
+            console.error("Error updating Firestore:", error);
+        }
     };
 
     return (
